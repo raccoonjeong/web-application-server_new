@@ -3,6 +3,7 @@ package webserver;
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -89,22 +90,34 @@ public class RequestHandler extends Thread {
 
                 if (cookieMap.containsKey("Cookie: logined") && Boolean.parseBoolean(cookieMap.get("Cookie: logined"))) {
 
-                    bodyOfResponse = Files.readAllBytes(new File("./webapp/user/list.html").toPath());
-                    response302Header(dos, bodyOfResponse.length, "/user/list.html");
+                    Collection<User> users = DataBase.findAll();
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("<table border='1'>");
+                    for(User user : users) {
+                        sb.append("<tr>");
+                        sb.append("<td>" + user.getUserId() + "</td>");
+                        sb.append("<td>" + user.getName() + "</td>");
+                        sb.append("<td>" + user.getEmail() + "</td>");
+                        sb.append("</tr>");
+                    }
+                    sb.append("</table>");
+                    // bodyOfResponse = Files.readAllBytes(new File("./webapp/user/list.html").toPath());
+                    bodyOfResponse = sb.toString().getBytes();
+                    response200Header(dos, bodyOfResponse.length);
 
                 } else {
-                    byte[] bodyData = Files.readAllBytes(new File("./webapp/user/login.html").toPath());
-                    response302Header(dos, bodyData.length, "/user/login.html");
+                    bodyOfResponse = Files.readAllBytes(new File("./webapp/user/login.html").toPath());
+                    response302Header(dos, bodyOfResponse.length, "/user/login.html");
 
                 }
 
             } else if (url.contains(".css")) {
-                byte[] bodyData = Files.readAllBytes(new File("./webapp" + url).toPath());
-                response200HeaderForCSS(dos, bodyData.length);
+                bodyOfResponse = Files.readAllBytes(new File("./webapp" + url).toPath());
+                response200HeaderForCSS(dos, bodyOfResponse.length);
             } else {
 
-                byte[] body = Files.readAllBytes(new File("./webapp"+tokens[1]).toPath());
-                response200Header(dos, body.length);
+                bodyOfResponse = Files.readAllBytes(new File("./webapp"+tokens[1]).toPath());
+                response200Header(dos, bodyOfResponse.length);
 
             }
 
@@ -121,7 +134,7 @@ public class RequestHandler extends Thread {
 
     private void response302HeaderWithCookie(DataOutputStream dos, int lengthOfBodyContent, String location, String cookie) {
         try {
-            dos.writeBytes("HTTP/1.1 302 OK \r\n");
+            dos.writeBytes("HTTP/1.1 302 Redirect \r\n");
             dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
             dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
             dos.writeBytes("Set-Cookie: " + cookie + "\r\n");
@@ -145,7 +158,7 @@ public class RequestHandler extends Thread {
 
     private void response302Header(DataOutputStream dos, int lengthOfBodyContent, String location) {
         try {
-            dos.writeBytes("HTTP/1.1 302 OK \r\n");
+            dos.writeBytes("HTTP/1.1 302 Redirect \r\n");
             dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
             dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
             dos.writeBytes("location: " + location + "\r\n");
