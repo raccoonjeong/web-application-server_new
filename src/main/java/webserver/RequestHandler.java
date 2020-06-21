@@ -53,72 +53,62 @@ public class RequestHandler extends Thread {
             }
 
             String url = tokens[1];
+            DataOutputStream dos = new DataOutputStream(out);
+            byte[] bodyOfResponse = null;
+
             if ("/user/create".equals(url)) {
 
-                String body = IOUtils.readData(br, contentLength);
-                Map<String, String> params = HttpRequestUtils.parseQueryString(body);
+                String bodyofRequest = IOUtils.readData(br, contentLength);
+                Map<String, String> params = HttpRequestUtils.parseQueryString(bodyofRequest);
                 User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
                 DataBase.addUser(user);
                 log.debug("User: {}", user);
 
-                DataOutputStream dos = new DataOutputStream(out);
-
-                byte[] bodyData = Files.readAllBytes(new File("./webapp/index.html").toPath());
-                response302Header(dos, bodyData.length, "/index.html");
-                responseBody(dos, bodyData);
+                bodyOfResponse = Files.readAllBytes(new File("./webapp/index.html").toPath());
+                response302Header(dos, bodyOfResponse.length, "/index.html");
 
             } else if ("/user/login".equals(url)) {
 
-                String body = IOUtils.readData(br, contentLength);
-                Map<String, String> params = HttpRequestUtils.parseQueryString(body);
-
-                DataOutputStream dos = new DataOutputStream(out);
+                String bodyofRequest = IOUtils.readData(br, contentLength);
+                Map<String, String> params = HttpRequestUtils.parseQueryString(bodyofRequest);
 
                 User user = DataBase.findUserById(params.get("userId"));
                 if (user != null && user.getUserId().equals(params.get("userId")) && user.getUserId().equals(params.get("password"))) {
                     // 로그인 성공
                     log.debug("로그인 성공");
-                    byte[] bodyData = Files.readAllBytes(new File("./webapp/index.html").toPath());
-                    response302HeaderWithCookie(dos, bodyData.length, "/index.html", "logined=true");
-                    responseBody(dos, bodyData);
+                    bodyOfResponse = Files.readAllBytes(new File("./webapp/index.html").toPath());
+                    response302HeaderWithCookie(dos, bodyOfResponse.length, "/index.html", "logined=true");
 
                 } else {
                     log.debug("로그인 실패");
-                    byte[] bodyData = Files.readAllBytes(new File("./webapp/user/login_failed.html").toPath());
-                    response302HeaderWithCookie(dos, bodyData.length, "/user/login_failed.html", "logined=fail");
-                    responseBody(dos, bodyData);
+                    bodyOfResponse = Files.readAllBytes(new File("./webapp/user/login_failed.html").toPath());
+                    response302HeaderWithCookie(dos, bodyOfResponse.length, "/user/login_failed.html", "logined=fail");
 
                 }
             } else if ("/user/list".equals(url)) {
 
-                DataOutputStream dos = new DataOutputStream(out);
                 if (cookieMap.containsKey("Cookie: logined") && Boolean.parseBoolean(cookieMap.get("Cookie: logined"))) {
 
-                    byte[] bodyData = Files.readAllBytes(new File("./webapp/user/list.html").toPath());
-                    response302Header(dos, bodyData.length, "/user/list.html");
-                    responseBody(dos, bodyData);
+                    bodyOfResponse = Files.readAllBytes(new File("./webapp/user/list.html").toPath());
+                    response302Header(dos, bodyOfResponse.length, "/user/list.html");
 
                 } else {
                     byte[] bodyData = Files.readAllBytes(new File("./webapp/user/login.html").toPath());
                     response302Header(dos, bodyData.length, "/user/login.html");
-                    responseBody(dos, bodyData);
 
                 }
 
             } else if (url.contains(".css")) {
-                DataOutputStream dos = new DataOutputStream(out);
                 byte[] bodyData = Files.readAllBytes(new File("./webapp" + url).toPath());
                 response200HeaderForCSS(dos, bodyData.length);
-                responseBody(dos, bodyData);
             } else {
-
-                DataOutputStream dos = new DataOutputStream(out);
 
                 byte[] body = Files.readAllBytes(new File("./webapp"+tokens[1]).toPath());
                 response200Header(dos, body.length);
-                responseBody(dos, body);
 
             }
+
+            responseBody(dos, bodyOfResponse);
 
         } catch (IOException e) {
             log.error(e.getMessage());
