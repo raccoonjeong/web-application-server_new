@@ -15,10 +15,9 @@ import java.util.Map;
 public class HttpRequest {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
 
-    private String method;
-    private String path;
     private Map<String,String> headers = new HashMap<String, String>();
     private Map<String,String> params = new HashMap<String, String>();
+    private RequestLine requestLine;
 
     public HttpRequest(InputStream in) {
         try {
@@ -26,7 +25,7 @@ public class HttpRequest {
             String line = br.readLine();
             if (line == null) return;
 
-            processRequestLine(line);
+            requestLine = new RequestLine(line);
 
             line = br.readLine();
             while(!line.equals("")) {
@@ -36,9 +35,11 @@ public class HttpRequest {
                 line = br.readLine();
             }
 
-            if ("POST".equals(method)) {
+            if (requestLine.getMethod().equals(HttpMethod.POST.toString())) {
                 String body = IOUtils.readData(br, Integer.parseInt(headers.get("Content-Length")));
                 params = HttpRequestUtils.parseQueryString(body);
+            } else {
+                params = requestLine.getParams();
             }
 
         } catch(IOException io) {
@@ -46,32 +47,12 @@ public class HttpRequest {
         }
     }
 
-    private void processRequestLine(String requestLine) {
-        log.debug("request line : {}", requestLine);
-        String[] tokens = requestLine.split(" ");
-        method = tokens[0];
-
-        if ("POST".equals(method)) {
-           path = tokens[1];
-           return;
-        }
-
-        int index = tokens[1].indexOf("?");
-
-        if(index == -1) { // 쿼리스트링이 없다
-            path = tokens[1];
-        } else { // 쿼리스트링이 있다
-            path = tokens[1].substring(0, index);
-            params = HttpRequestUtils.parseQueryString(tokens[1].substring(index+1));
-        }
-    }
-
-    public String getMethod() {
-        return this.method;
+    public HttpMethod getMethod() {
+        return this.requestLine.getMethod();
     }
 
     public String getPath() {
-        return this.path;
+        return this.requestLine.getPath();
     }
 
     public String getHeader(String key) {
@@ -81,70 +62,5 @@ public class HttpRequest {
     public String getParameter(String key) {
         return this.params.get(key);
     }
-
-//    public HttpRequest(InputStream in) {
-//        try {
-//            BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-//            String line = br.readLine();
-//            log.debug("request line: {}", line);
-//
-//            if (line == null)  return;
-//
-//            String[] tokens = line.split(" ");
-//            String method = tokens[0];
-//            String url = tokens[1];
-//
-//            String[] pathAndParams = HttpRequestUtils.parsePathAndParams(url);
-//            String path = pathAndParams[0];
-//
-//            Map<String, String> paramMap = HttpRequestUtils.parseQueryString(pathAndParams[1]);
-////            int contentLength = 0;
-//
-//            Map<String, String> headerMap = new HashMap<>();
-//            while (!line.equals("")) {
-//                line = br.readLine();
-//                if (line != null && line.contains(":")) {
-//                    log.debug("header: {}", line);
-//                    HttpRequestUtils.Pair pair = HttpRequestUtils.parseHeader(line);
-//                    headerMap.put(pair.getKey(), pair.getValue());
-//                } else {
-//                    break;
-//                }
-//            }
-//
-////            setMethod(method);
-////            setPath(path);
-////            setParameter(paramMap);
-////            setHeader(headerMap);
-//            this.method = method;
-//            this.path = path;
-//            this.parameterMap = paramMap;
-//            this.headerMap = headerMap;
-//
-//        }catch(Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-//    private int getContentLength(String line) {
-//        String[] headerTokens = line.split(":");
-//        return Integer.parseInt(headerTokens[1].trim());
-//    }
-//
-//    public void setMethod(String method) {
-//        this.method = method;
-//    }
-//
-//    public void setPath(String path) {
-//        this.path = path;
-//    }
-//
-//    public void setHeader(Map headerMap) {
-//        this.headerMap = headerMap;
-//    }
-//
-//    public void setParameter(Map parameterMap) {
-//        this.parameterMap = parameterMap;
-//    }
-//
 
 }
