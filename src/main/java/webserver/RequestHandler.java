@@ -30,38 +30,32 @@ public class RequestHandler extends Thread {
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
 
-            BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-            String line = br.readLine();
-            log.debug("request line: {}", line);
+            HttpRequest httpRequest = new HttpRequest(in);
 
-            if (line == null) {
-                return;
-            }
-            String[] tokens = line.split(" ");
+            // int contentLength = 0;
 
-            int contentLength = 0;
-            Map<String, String> cookieMap = new HashMap<>();
-            while (!line.equals("")) {
-                line = br.readLine();
-                log.debug("header: {}", line);
-                if (line.contains("Content-Length")) {
-                    contentLength = getContentLength(line);
-                }
 
-                if (line.contains("Cookie")) {
-                    cookieMap = HttpRequestUtils.parseCookies(line);
-                }
-            }
+            String url = httpRequest.getPath();
 
-            String url = tokens[1];
+
+            // contentLength = Integer.valueOf(httpRequest.getHeader("Content-Length"));
+            Map<String, String> cookieMap = HttpRequestUtils.parseCookies(httpRequest.getHeader("Cookie"));
+
             DataOutputStream dos = new DataOutputStream(out);
             byte[] bodyOfResponse = null;
 
+
             if ("/user/create".equals(url)) {
 
-                String bodyofRequest = IOUtils.readData(br, contentLength);
-                Map<String, String> params = HttpRequestUtils.parseQueryString(bodyofRequest);
-                User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
+//                String bodyofRequest = IOUtils.readData(br, contentLength);
+//                Map<String, String> params = HttpRequestUtils.parseQueryString(bodyofRequest);
+                // User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
+
+                User user = new User(httpRequest.getParameter("userId"),
+                        httpRequest.getParameter("password"),
+                        httpRequest.getParameter("name"),
+                        httpRequest.getParameter("email"));
+
                 DataBase.addUser(user);
                 log.debug("User: {}", user);
 
@@ -70,11 +64,12 @@ public class RequestHandler extends Thread {
 
             } else if ("/user/login".equals(url)) {
 
-                String bodyofRequest = IOUtils.readData(br, contentLength);
-                Map<String, String> params = HttpRequestUtils.parseQueryString(bodyofRequest);
+//                String bodyofRequest = IOUtils.readData(br, contentLength);
+//                Map<String, String> params = HttpRequestUtils.parseQueryString(bodyofRequest);
 
-                User user = DataBase.findUserById(params.get("userId"));
-                if (user != null && user.getUserId().equals(params.get("userId")) && user.getUserId().equals(params.get("password"))) {
+                User user = DataBase.findUserById(httpRequest.getParameter("userId"));
+                if (user != null && user.getUserId().equals(httpRequest.getParameter("userId"))
+                        && user.getPassword().equals(httpRequest.getParameter("password"))) {
                     // 로그인 성공
                     log.debug("로그인 성공");
                     bodyOfResponse = Files.readAllBytes(new File("./webapp/index.html").toPath());
@@ -116,7 +111,7 @@ public class RequestHandler extends Thread {
                 response200HeaderForCSS(dos, bodyOfResponse.length);
             } else {
 
-                bodyOfResponse = Files.readAllBytes(new File("./webapp"+tokens[1]).toPath());
+                bodyOfResponse = Files.readAllBytes(new File("./webapp" + url).toPath());
                 response200Header(dos, bodyOfResponse.length);
 
             }

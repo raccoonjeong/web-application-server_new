@@ -17,6 +17,7 @@ public class HttpRequest {
 
     private Map<String,String> headers = new HashMap<String, String>();
     private Map<String,String> params = new HashMap<String, String>();
+    private String body = "";
     private RequestLine requestLine;
 
     public HttpRequest(InputStream in) {
@@ -35,7 +36,7 @@ public class HttpRequest {
                 line = br.readLine();
             }
 
-            if (requestLine.getMethod().equals(HttpMethod.POST.toString())) {
+            if (requestLine.getMethod() == HttpMethod.POST ) {
                 String body = IOUtils.readData(br, Integer.parseInt(headers.get("Content-Length")));
                 params = HttpRequestUtils.parseQueryString(body);
             } else {
