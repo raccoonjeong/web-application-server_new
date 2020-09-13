@@ -41,6 +41,10 @@ public class RequestHandler extends Thread {
             // contentLength = Integer.valueOf(httpRequest.getHeader("Content-Length"));
             Map<String, String> cookieMap = HttpRequestUtils.parseCookies(httpRequest.getHeader("Cookie"));
 
+            HttpResponse httpResponse = new HttpResponse(out);
+            // httpResponse.addHeader();
+
+
             DataOutputStream dos = new DataOutputStream(out);
             byte[] bodyOfResponse = null;
 
@@ -59,8 +63,10 @@ public class RequestHandler extends Thread {
                 DataBase.addUser(user);
                 log.debug("User: {}", user);
 
-                bodyOfResponse = Files.readAllBytes(new File("./webapp/index.html").toPath());
-                response302Header(dos, bodyOfResponse.length, "/index.html");
+//                bodyOfResponse = Files.readAllBytes(new File("./webapp/index.html").toPath());
+//                response302Header(dos, bodyOfResponse.length, "/index.html");
+
+                httpResponse.sendRedirect("/index.html");
 
             } else if ("/user/login".equals(url)) {
 
@@ -72,14 +78,16 @@ public class RequestHandler extends Thread {
                         && user.getPassword().equals(httpRequest.getParameter("password"))) {
                     // 로그인 성공
                     log.debug("로그인 성공");
-                    bodyOfResponse = Files.readAllBytes(new File("./webapp/index.html").toPath());
-                    response302HeaderWithCookie(dos, bodyOfResponse.length, "/index.html", "logined=true");
-
+//                    bodyOfResponse = Files.readAllBytes(new File("./webapp/index.html").toPath());
+//                    response302HeaderWithCookie(dos, bodyOfResponse.length, "/index.html", "logined=true");
+                    httpResponse.addHeader("Set-Cookie", "logined=true");
+                    httpResponse.sendRedirect("/index.html");
                 } else {
                     log.debug("로그인 실패");
-                    bodyOfResponse = Files.readAllBytes(new File("./webapp/user/login_failed.html").toPath());
-                    response302HeaderWithCookie(dos, bodyOfResponse.length, "/user/login_failed.html", "logined=fail");
-
+//                    bodyOfResponse = Files.readAllBytes(new File("./webapp/user/login_failed.html").toPath());
+//                    response302HeaderWithCookie(dos, bodyOfResponse.length, "/user/login_failed.html", "logined=fail");
+                    httpResponse.addHeader("Set-Cookie", "logined=fail");
+                    httpResponse.sendRedirect("/user/login_failed.html");
                 }
             } else if ("/user/list".equals(url)) {
 
@@ -97,26 +105,29 @@ public class RequestHandler extends Thread {
                     }
                     sb.append("</table>");
                     // bodyOfResponse = Files.readAllBytes(new File("./webapp/user/list.html").toPath());
-                    bodyOfResponse = sb.toString().getBytes();
-                    response200Header(dos, bodyOfResponse.length);
+//                    bodyOfResponse = sb.toString().getBytes();
+//                    response200Header(dos, bodyOfResponse.length);
+                    httpResponse.forwardBody(sb.toString());
 
                 } else {
-                    bodyOfResponse = Files.readAllBytes(new File("./webapp/user/login.html").toPath());
-                    response302Header(dos, bodyOfResponse.length, "/user/login.html");
+//                    bodyOfResponse = Files.readAllBytes(new File("./webapp/user/login.html").toPath());
+//                    response302Header(dos, bodyOfResponse.length, "/user/login.html");
+                    httpResponse.sendRedirect("/user/login.html");
 
                 }
 
-            } else if (url.contains(".css")) {
-                bodyOfResponse = Files.readAllBytes(new File("./webapp" + url).toPath());
-                response200HeaderForCSS(dos, bodyOfResponse.length);
+            } else if (url.contains(".css") || url.contains(".js")) {
+//                bodyOfResponse = Files.readAllBytes(new File("./webapp" + url).toPath());
+//                response200HeaderForCSS(dos, bodyOfResponse.length);
+                httpResponse.forward(url);
             } else {
 
-                bodyOfResponse = Files.readAllBytes(new File("./webapp" + url).toPath());
-                response200Header(dos, bodyOfResponse.length);
-
+//                bodyOfResponse = Files.readAllBytes(new File("./webapp" + url).toPath());
+//                response200Header(dos, bodyOfResponse.length);
+                httpResponse.forward(url);
             }
 
-            responseBody(dos, bodyOfResponse);
+            // responseBody(dos, bodyOfResponse);
 
         } catch (IOException e) {
             log.error(e.getMessage());
