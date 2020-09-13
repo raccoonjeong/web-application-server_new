@@ -31,13 +31,12 @@ public class RequestHandler extends Thread {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
 
             HttpRequest httpRequest = new HttpRequest(in);
+            HttpResponse httpResponse = new HttpResponse(out);
+
 
             String url = httpRequest.getPath();
             Map<String, String> cookieMap = HttpRequestUtils.parseCookies(httpRequest.getHeader("Cookie"));
 
-            HttpResponse httpResponse = new HttpResponse(out);
-            DataOutputStream dos = new DataOutputStream(out);
-            byte[] bodyOfResponse = null;
 
             if ("/user/create".equals(url)) {
                 User user = new User(httpRequest.getParameter("userId"),

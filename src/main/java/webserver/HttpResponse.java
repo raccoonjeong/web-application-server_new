@@ -37,12 +37,7 @@ public class HttpResponse {
                 headers.put("Content-Type", "text/html;charset=utf=8");
             }
             headers.put("Content-Length", body.length + "");
-//            dos.writeBytes("HTTP/1.1 200 OK \r\n");
-//            dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
-//            processHeaders();
-//            dos.writeBytes("\r\n");
-//            dos.writeBytes(url); // body
-//            dos.writeBytes("\r\n");
+
             response200Header(body.length);
             responseBody(body);
         }catch(Exception e) {
