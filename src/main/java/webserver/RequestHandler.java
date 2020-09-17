@@ -30,62 +30,76 @@ public class RequestHandler extends Thread {
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
 
-            HttpRequest httpRequest = new HttpRequest(in);
-            HttpResponse httpResponse = new HttpResponse(out);
+            HttpRequest request = new HttpRequest(in);
+            HttpResponse response = new HttpResponse(out);
 
 
-            String url = httpRequest.getPath();
-            Map<String, String> cookieMap = HttpRequestUtils.parseCookies(httpRequest.getHeader("Cookie"));
-
+            String url = request.getPath();
 
             if ("/user/create".equals(url)) {
-                User user = new User(httpRequest.getParameter("userId"),
-                        httpRequest.getParameter("password"),
-                        httpRequest.getParameter("name"),
-                        httpRequest.getParameter("email"));
-
-                DataBase.addUser(user);
-                log.debug("User: {}", user);
-
-                httpResponse.sendRedirect("/index.html");
+                createUser(request, response);
 
             } else if ("/user/login".equals(url)) {
-                User user = DataBase.findUserById(httpRequest.getParameter("userId"));
-                if (user != null && user.getUserId().equals(httpRequest.getParameter("userId"))
-                        && user.getPassword().equals(httpRequest.getParameter("password"))) {
-                    // 로그인 성공
-                    log.debug("로그인 성공");
-                    httpResponse.addHeader("Set-Cookie", "logined=true");
-                    httpResponse.sendRedirect("/index.html");
-                } else {
-                    log.debug("로그인 실패");
-                    httpResponse.addHeader("Set-Cookie", "logined=fail");
-                    httpResponse.sendRedirect("/user/login_failed.html");
-                }
-            } else if ("/user/list".equals(url)) {
+                login(request, response);
 
-                if (cookieMap.containsKey("Cookie: logined") && Boolean.parseBoolean(cookieMap.get("Cookie: logined"))) {
-                    Collection<User> users = DataBase.findAll();
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("<table border='1'>");
-                    for(User user : users) {
-                        sb.append("<tr>");
-                        sb.append("<td>" + user.getUserId() + "</td>");
-                        sb.append("<td>" + user.getName() + "</td>");
-                        sb.append("<td>" + user.getEmail() + "</td>");
-                        sb.append("</tr>");
-                    }
-                    sb.append("</table>");
-                    httpResponse.forwardBody(sb.toString());
-                } else {
-                    httpResponse.sendRedirect("/user/login.html");
-                }
+            } else if ("/user/list".equals(url)) {
+                listUser(request, response);
+
             } else {
-                httpResponse.forward(url);
+                response.forward(url);
             }
 
         } catch (IOException e) {
             log.error(e.getMessage());
+        }
+    }
+
+    private void listUser(HttpRequest request, HttpResponse response) {
+        Map<String, String> cookieMap = HttpRequestUtils.parseCookies(request.getHeader("Cookie"));
+
+        System.out.println("cookieMap 로그:" + cookieMap);
+
+        if (Boolean.parseBoolean(cookieMap.get("logined"))) {
+            Collection<User> users = DataBase.findAll();
+            StringBuilder sb = new StringBuilder();
+            sb.append("<table border='1'>");
+            for(User user : users) {
+                sb.append("<tr>");
+                sb.append("<td>" + user.getUserId() + "</td>");
+                sb.append("<td>" + user.getName() + "</td>");
+                sb.append("<td>" + user.getEmail() + "</td>");
+                sb.append("</tr>");
+            }
+            sb.append("</table>");
+            response.forwardBody(sb.toString());
+        } else {
+            response.sendRedirect("/user/login.html");
+        }
+    }
+
+    private void createUser(HttpRequest request, HttpResponse response) {
+        User user = new User(request.getParameter("userId"),
+                request.getParameter("password"),
+                request.getParameter("name"),
+                request.getParameter("email"));
+
+        DataBase.addUser(user);
+        log.debug("User: {}", user);
+
+        response.sendRedirect("/index.html");
+    }
+    private void login(HttpRequest request, HttpResponse response) {
+        User user = DataBase.findUserById(request.getParameter("userId"));
+        if (user != null && user.getUserId().equals(request.getParameter("userId"))
+                && user.getPassword().equals(request.getParameter("password"))) {
+            // 로그인 성공
+            log.debug("로그인 성공");
+            response.addHeader("Set-Cookie", "logined=true");
+            response.sendRedirect("/index.html");
+        } else {
+            log.debug("로그인 실패");
+            response.addHeader("Set-Cookie", "logined=fail");
+            response.sendRedirect("/user/login_failed.html");
         }
     }
 
