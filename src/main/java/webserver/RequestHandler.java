@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import controller.Controller;
 import db.DataBase;
 import model.User;
 import org.slf4j.Logger;
@@ -33,20 +34,13 @@ public class RequestHandler extends Thread {
             HttpRequest request = new HttpRequest(in);
             HttpResponse response = new HttpResponse(out);
 
-
-            String url = request.getPath();
-
-            if ("/user/create".equals(url)) {
-                createUser(request, response);
-
-            } else if ("/user/login".equals(url)) {
-                login(request, response);
-
-            } else if ("/user/list".equals(url)) {
-                listUser(request, response);
-
+            Controller controller =
+                    RequestMapping.getController(request.getPath());
+            if (controller == null) {
+                String path = getDefaultPath(request.getPath());
+                response.forward(path);
             } else {
-                response.forward(url);
+                controller.service(request, response);
             }
 
         } catch (IOException e) {
@@ -54,53 +48,11 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private void listUser(HttpRequest request, HttpResponse response) {
-        Map<String, String> cookieMap = HttpRequestUtils.parseCookies(request.getHeader("Cookie"));
-
-        System.out.println("cookieMap 로그:" + cookieMap);
-
-        if (Boolean.parseBoolean(cookieMap.get("logined"))) {
-            Collection<User> users = DataBase.findAll();
-            StringBuilder sb = new StringBuilder();
-            sb.append("<table border='1'>");
-            for(User user : users) {
-                sb.append("<tr>");
-                sb.append("<td>" + user.getUserId() + "</td>");
-                sb.append("<td>" + user.getName() + "</td>");
-                sb.append("<td>" + user.getEmail() + "</td>");
-                sb.append("</tr>");
-            }
-            sb.append("</table>");
-            response.forwardBody(sb.toString());
-        } else {
-            response.sendRedirect("/user/login.html");
+    private String getDefaultPath(String path) {
+        if (path.equals("/")) {
+            return "/index.html";
         }
-    }
-
-    private void createUser(HttpRequest request, HttpResponse response) {
-        User user = new User(request.getParameter("userId"),
-                request.getParameter("password"),
-                request.getParameter("name"),
-                request.getParameter("email"));
-
-        DataBase.addUser(user);
-        log.debug("User: {}", user);
-
-        response.sendRedirect("/index.html");
-    }
-    private void login(HttpRequest request, HttpResponse response) {
-        User user = DataBase.findUserById(request.getParameter("userId"));
-        if (user != null && user.getUserId().equals(request.getParameter("userId"))
-                && user.getPassword().equals(request.getParameter("password"))) {
-            // 로그인 성공
-            log.debug("로그인 성공");
-            response.addHeader("Set-Cookie", "logined=true");
-            response.sendRedirect("/index.html");
-        } else {
-            log.debug("로그인 실패");
-            response.addHeader("Set-Cookie", "logined=fail");
-            response.sendRedirect("/user/login_failed.html");
-        }
+        return path;
     }
 
 }
