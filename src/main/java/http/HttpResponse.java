@@ -1,4 +1,4 @@
-package webserver;
+package http;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +10,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 public class HttpResponse {
     private final static Logger log = LoggerFactory.getLogger(HttpResponse.class);

@@ -1,12 +1,13 @@
 package controller;
 
 import db.DataBase;
+import http.HttpSession;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.HttpRequestUtils;
-import webserver.HttpRequest;
-import webserver.HttpResponse;
+import http.HttpRequest;
+import http.HttpResponse;
 
 import java.util.Collection;
 import java.util.Map;
@@ -19,7 +20,7 @@ public class ListUserController implements Controller{
 
         log.debug("cookieMap 로그:" + cookieMap);
 
-        if (Boolean.parseBoolean(cookieMap.get("logined"))) {
+        if (!isLogined(request.getSession())) {
             Collection<User> users = DataBase.findAll();
             StringBuilder sb = new StringBuilder();
             sb.append("<table border='1'>");
@@ -35,5 +36,13 @@ public class ListUserController implements Controller{
         } else {
             response.sendRedirect("/user/login.html");
         }
+    }
+
+    private static boolean isLogined(HttpSession session) {
+        Object user = session.getAttribute("user");
+        if (user == null) {
+            return false;
+        }
+        return true;
     }
 }

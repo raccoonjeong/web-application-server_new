@@ -1,6 +1,6 @@
 import org.junit.Test;
-import webserver.HttpMethod;
-import webserver.RequestLine;
+import http.HttpMethod;
+import http.RequestLine;
 
 import static org.junit.Assert.assertEquals;
 

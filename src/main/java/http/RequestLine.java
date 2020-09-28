@@ -1,8 +1,10 @@
-package webserver;
+package http;
 
+import http.HttpMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.HttpRequestUtils;
+import webserver.RequestHandler;
 
 import java.util.Map;
 

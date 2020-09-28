@@ -1,5 +1,5 @@
 import org.junit.Test;
-import webserver.HttpResponse;
+import http.HttpResponse;
 
 import java.io.File;
 import java.io.FileNotFoundException;

@@ -1,7 +1,7 @@
 package controller;
 
-import webserver.HttpRequest;
-import webserver.HttpResponse;
+import http.HttpRequest;
+import http.HttpResponse;
 
 public class ForwardController implements Controller{
     @Override

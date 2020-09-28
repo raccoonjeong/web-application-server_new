@@ -1,9 +1,10 @@
-package webserver;
+package http;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.HttpRequestUtils;
 import util.IOUtils;
+import webserver.RequestHandler;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -62,6 +63,14 @@ public class HttpRequest {
 
     public String getParameter(String key) {
         return this.params.get(key);
+    }
+
+    public HttpCookie getCookies() {
+        return new HttpCookie(getHeader("Cookie"));
+    }
+
+    public HttpSession getSession() {
+        return HttpSessions.getSession(getCookies().getCookie("JSESSIONID"));
     }
 
 }
